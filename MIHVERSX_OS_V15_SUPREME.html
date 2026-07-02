@@ -1,0 +1,1224 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, orientation=landscape">
+    <title>MİHVERSX OS Premium - Ultimate Windows Simulator</title>
+    <style>
+        /* --- CORE SYSTEM & RESET --- */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            touch-action: none;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #070913;
+            position: relative;
+            cursor: none;
+        }
+
+        /* --- GPU ACCELERATED BACKGROUND --- */
+        #bg-bloom {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: #0f111a url('https://images.unsplash.com/photo-1620121692029-d088224ddc74?q=80&w=1920') no-repeat center center/cover;
+            transition: background 0.5s ease;
+            pointer-events: none;
+            z-index: 1;
+            transform: translate3d(0,0,0);
+            will-change: transform;
+        }
+
+        /* --- REAL WINDOWS CURSOR ENGINE --- */
+        #windows-cursor {
+            position: absolute;
+            width: 19px;
+            height: 25px;
+            background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 32'%3E%3Cpath fill='white' stroke='black' stroke-width='2' stroke-linejoin='miter' stroke-miterlimit='10' d='M1,1 L1,27.5 L8.5,20 L14.5,31 L18.5,29 L12.5,18 L21.5,18 Z'/%3E%3C/svg%3E") no-repeat;
+            pointer-events: none;
+            z-index: 1000000;
+            left: 0;
+            top: 0;
+            transform: translate3d(50vw, 50vh, 0);
+            will-change: transform;
+        }
+
+        #windows-cursor.pointer {
+            width: 21px;
+            height: 27px;
+            background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath fill='white' stroke='black' stroke-width='2' d='M10,8 L10,13 L8,13 L8,4 C8,2.9 8.9,2 10,2 C11.1,2 12,2.9 12,4 L12,13 L14,13 L14,6 C14,4.9 14.9,4 16,4 C17.1,4 18,4.9 18,6 L18,13 L20,13 L20,8 C20,6.9 20.9,6 22,6 C23.1,6 24,6.9 24,8 L24,15 L26,15 C27.1,15 28,15.9 28,17 L28,24 C28,28.4 24.4,32 20,32 L12,32 C8.7,32 6,29.3 6,26 L6,19 C6,17.9 6.9,17 8,17 L10,17 Z M10,13 L10,16 C10,16.6 9.6,17 9,17 L8,17 L8,19 L8,26 C8,28.2 9.8,30 12,30 L20,30 C23.3,30 26,27.3 26,24 L26,17 L24,17 L24,19 L22,19 L22,13 L20,13 L20,16 L18,16 L18,8 L16,8 L16,16 L14,16 L14,6 L12,6 L12,16 L10,16 Z'/%3E%3C/svg%3E") no-repeat;
+        }
+
+        #windows-cursor.move {
+            width: 24px;
+            height: 24px;
+            background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath fill='black' d='M16,2 L12,6 L15,6 L15,15 L6,15 L6,12 L2,16 L6,20 L6,17 L15,17 L15,26 L12,26 L16,30 L20,26 L17,26 L17,17 L26,17 L26,20 L30,16 L26,12 L26,15 L17,15 L17,6 L20,6 Z'/%3E%3C/svg%3E") no-repeat;
+        }
+
+        #windows-cursor.text {
+            width: 12px;
+            height: 22px;
+            background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 24'%3E%3Cpath fill='black' d='M3,2 L13,2 L13,4 L9,4 L9,20 L13,20 L13,22 L3,22 L3,20 L7,20 L7,4 L3,4 Z'/%3E%3C/svg%3E") no-repeat;
+        }
+
+        /* --- BOOT SYSTEM SPLASH SCREEN --- */
+        #boot-screen {
+            position: absolute;
+            width: 100%; height: 100%;
+            background: #000000;
+            z-index: 9999999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+        .spinner {
+            width: 40px; height: 40px;
+            border: 4px solid rgba(255,255,255,0.1);
+            border-top-color: #0078d4;
+            border-radius: 50%;
+            animation: spin 1s infinite linear;
+            margin-top: 30px;
+        }
+        @keyframes spin {0% {transform: rotate(0deg);} 100% {transform: rotate(360deg);}}
+
+        /* --- CONTEXT MENU (SAĞ TIK) --- */
+        #context-menu {
+            position: absolute;
+            width: 180px;
+            background: rgba(28, 33, 46, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px;
+            padding: 6px 0;
+            display: none;
+            z-index: 500000;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+        }
+        .context-item {
+            padding: 8px 16px;
+            color: #eee;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .context-item.hovered { background: rgba(255,255,255,0.1); color: #fff; }
+
+        /* --- TOP DASHBOARD WIDGET --- */
+        #top-dashboard {
+            position: absolute;
+            top: 15px; left: 50%;
+            transform: translateX(-50%);
+            width: 600px; height: 60px;
+            background: rgba(13, 17, 27, 0.7);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 25px;
+            z-index: 10;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.3);
+        }
+        #dash-clock { color: #ffffff; font-size: 24px; font-weight: 300; }
+        #dash-date { color: rgba(255,255,255,0.5); font-size: 11px; font-weight: 600; text-transform: uppercase; margin-top: 2px;}
+        .dash-status { text-align: right; color: #4af7a0; font-size: 11px; font-weight: bold; letter-spacing: 0.5px; }
+
+        /* --- DESKTOP GRID SYSTEM --- */
+        #desktop {
+            width: 100%;
+            height: calc(100% - 48px);
+            position: relative;
+            padding: 95px 30px 30px 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            align-content: flex-start;
+            flex-wrap: wrap;
+            z-index: 5;
+        }
+        .desktop-icon {
+            width: 100px; height: 95px;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            border-radius: 6px; text-align: center;
+            border: 1px solid transparent;
+            transition: all 0.1s ease;
+        }
+        .desktop-icon.hovered {
+            background: rgba(255, 255, 255, 0.12);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+        }
+        .desktop-icon .icon-img { font-size: 36px; margin-bottom: 4px; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3)); }
+        .desktop-icon span {
+            color: #ffffff; font-size: 11px; font-weight: 400;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
+            display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+            padding: 0 4px;
+        }
+
+        /* --- PREMIUM WINDOW STRUCTURE --- */
+        .window {
+            position: absolute;
+            width: 800px; height: 530px;
+            background: rgba(20, 24, 38, 0.94);
+            backdrop-filter: blur(40px);
+            -webkit-backdrop-filter: blur(40px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 12px;
+            box-shadow: 0 35px 70px rgba(0,0,0,0.6);
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+            z-index: 100;
+            will-change: transform, opacity;
+            transform: scale(0.96) translate3d(0,0,0);
+            opacity: 0;
+            transition: transform 0.2s cubic-bezier(0.1, 0.9, 0.2, 1), opacity 0.2s cubic-bezier(0.1, 0.9, 0.2, 1);
+        }
+        .window.open {
+            display: flex;
+            transform: scale(1) translate3d(0,0,0);
+            opacity: 1;
+        }
+        .window.dragging { opacity: 0.82; transform: scale(0.99); }
+        .window.maximized {
+            width: 100% !important;
+            height: calc(100% - 48px) !important;
+            top: 0 !important; left: 0 !important;
+            border-radius: 0;
+            transform: none !important;
+        }
+
+        /* HARDWARE LOCKED WINDOW HEADER & CLOSING PATH */
+        .window-header {
+            padding: 0 0 0 16px;
+            height: 40px;
+            background: rgba(0, 0, 0, 0.2);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            pointer-events: auto;
+        }
+        .window-title { color: #ffffff; font-size: 12.5px; font-weight: 400; display: flex; align-items: center; gap: 8px; }
+        .window-controls { display: flex; height: 100%; align-items: center; pointer-events: auto; }
+        
+        .control-btn {
+            width: 46px; height: 100%;
+            display: flex; align-items: center; justify-content: center;
+            color: #cccccc; font-size: 12px; background: transparent;
+            border: none; pointer-events: auto;
+            transition: background 0.1s, color 0.1s;
+        }
+        .control-btn:hover { background: rgba(255,255,255,0.08); color: #fff; }
+        .control-btn.btn-close:hover { background: #e81123 !important; color: #ffffff !important; }
+
+        .window-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; background: #111420; color: #fff; position: relative;}
+
+        /* --- APPLICATION: GOOGLE BROWSER --- */
+        .browser-top-bar { background: #1c1f2e; padding: 8px 16px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .browser-dots { display: flex; gap: 6px; }
+        .browser-dot { width: 100%; height: 100%; border-radius: 50%; }
+        .browser-address-bar { flex: 1; background: #11131c; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 6px 16px; font-size: 12.5px; color: #aaa; display: flex; align-items: center; gap: 8px; }
+        .google-central-container { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #ffffff; padding-bottom: 40px;}
+        .google-logo { font-size: 68px; font-weight: bold; letter-spacing: -2px; margin-bottom: 25px; }
+        .google-logo span:nth-child(1) { color: #4285F4; } .google-logo span:nth-child(2) { color: #EA4335; } .google-logo span:nth-child(3) { color: #FBBC05; }
+        .google-logo span:nth-child(4) { color: #4285F4; } .google-logo span:nth-child(5) { color: #34A853; } .google-logo span:nth-child(6) { color: #EA4335; }
+        .google-search-box { width: 540px; background: #ffffff; border: 1px solid #dfe1e5; border-radius: 24px; padding: 12px 22px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); display: flex; align-items: center; gap: 14px; transition: box-shadow 0.2s; }
+        .google-search-box input { flex: 1; border: none; outline: none; font-size: 15px; color: #000; background: transparent; }
+        .search-results-dropdown { width: 540px; background: #ffffff; border: 1px solid #dfe1e5; border-radius: 12px; margin-top: 10px; box-shadow: 0 8px 24px rgba(0,0,0,0.15); overflow: hidden; display: none; z-index: 1000; }
+        .result-item { padding: 14px 22px; font-size: 13.5px; color: #202124; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid #f1f3f4; }
+        .result-item.hovered { background: #f8f9fa; }
+        .result-item span.highlight { color: #d4a300; font-weight: bold; }
+
+        /* --- APPLICATION: BU BİLGİSAYAR --- */
+        .pc-layout { display: flex; height: 100%; }
+        .pc-sidebar { width: 180px; background: rgba(0,0,0,0.15); border-right: 1px solid rgba(255,255,255,0.05); padding: 15px 10px; display: flex; flex-direction: column; gap: 8px; }
+        .sidebar-item { padding: 8px 12px; border-radius: 6px; font-size: 12.5px; color: #ddd; display: flex; align-items: center; gap: 10px; }
+        .sidebar-item.active, .sidebar-item.hovered { background: rgba(255,255,255,0.08); color: #fff; }
+        .pc-main { flex: 1; padding: 25px; overflow-y: auto; display: flex; flex-direction: column; gap: 20px; }
+        .spec-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); padding: 16px; border-radius: 10px; }
+        .spec-title { color: #ffd700; font-weight: bold; font-size: 13.5px; margin-bottom: 8px; display: flex; align-items: center; gap: 8px;}
+        .spec-text { color: #d0d5e0; font-size: 12.5px; line-height: 1.6; }
+        .progress-bar-container { width: 100%; height: 8px; background: rgba(255,255,255,0.08); border-radius: 4px; margin-top: 10px; overflow: hidden; }
+        .progress-bar-fill { height: 100%; background: linear-gradient(90deg, #34a853, #4af7a0); width: 80.4%; }
+
+        /* --- GAME MECHANICS & CONTAINERS --- */
+        .game-wrapper { padding: 25px; display: flex; flex-direction: column; height: 100%; overflow-y: auto;}
+        .game-header-banner { width: 100%; height: 140px; border-radius: 10px; background: linear-gradient(135deg, #1e293b, #0f172a); display: flex; align-items: center; padding: 30px; border: 1px solid rgba(255,255,255,0.05); margin-bottom: 20px;}
+        
+        /* STANDOFF 2 INTERNALS */
+        .so2-crosshair-box { background: rgba(0,0,0,0.3); border: 1px dashed rgba(255,255,255,0.2); width: 100%; height: 150px; border-radius: 8px; display: flex; align-items: center; justify-content: center; position: relative; margin: 15px 0;}
+        .so2-crosshair { width: 12px; height: 12px; position: relative; }
+        .so2-crosshair::before, .so2-crosshair::after { content:''; position:absolute; background: #00ff00; }
+        .so2-crosshair::before { top:5px; left:-10px; width:32px; height:2px; }
+        .so2-crosshair::after { left:5px; top:-10px; width:2px; height:32px; }
+        .game-control-row { display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.02); padding: 12px 16px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.04); margin-bottom: 10px;}
+        
+        /* SUPER KICKOFF TACTICS MATRIX */
+        .sk-pitch { width: 100%; height: 180px; background: radial-gradient(#2e7d32, #1b5e20); border: 2px solid rgba(255,255,255,0.3); border-radius: 8px; position: relative; margin: 15px 0; display: flex; justify-content: space-around; align-items: center; padding: 0 40px; }
+        .sk-pitch::before { content: ''; position: absolute; left: 50%; width: 2px; height: 100%; background: rgba(255,255,255,0.3); }
+        .sk-player-node { width: 36px; height: 36px; background: #ffd700; border: 2px solid #fff; border-radius: 50%; color: #000; font-weight: bold; font-size: 11px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+
+        /* THE PAST WITHIN ENGINE */
+        .tpw-split { display: flex; gap: 15px; flex: 1; margin-top: 10px;}
+        .tpw-room { flex: 1; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 15px; display: flex; flex-direction: column; gap: 10px;}
+        .tpw-input-box { background: #111420; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 8px; color: #fff; outline: none; font-size: 13px; text-align: center; letter-spacing: 2px;}
+        .tpw-btn { padding: 10px; background: #ff5f56; border: none; border-radius: 6px; color: #fff; font-weight: bold; font-size: 12px;}
+
+        /* --- NEW CORE APPLICATION: INTERACTIVE TERMUX --- */
+        .termux-wrapper { flex: 1; background: #000000; padding: 15px; font-family: 'Courier New', monospace; font-size: 13px; color: #02bf02; display: flex; flex-direction: column; overflow-y: auto;}
+        .termux-history { display: flex; flex-direction: column; gap: 4px; }
+        .termux-input-line { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+        .termux-prompt { color: #0087ff; font-weight: bold; }
+        .termux-cmd-input { flex:1; background: transparent; border: none; outline: none; color: #02bf02; font-family: 'Courier New', monospace; font-size: 13px; }
+
+        /* --- NEW CORE APPLICATION: YOUTUBE STUDIO --- */
+        .studio-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding: 20px; }
+        .studio-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 16px; }
+        .studio-metric { font-size: 28px; font-weight: bold; color: #ff0000; margin-top: 5px; text-shadow: 0 0 10px rgba(255,0,0,0.2); }
+
+        /* --- TASKBAR & START MENU --- */
+        #taskbar {
+            width: 100%; height: 48px; position: absolute; bottom: 0; left: 0;
+            background: rgba(16, 21, 32, 0.86); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+            border-top: 1px solid rgba(255, 255, 255, 0.06); display: flex; justify-content: center; align-items: center; z-index: 99999;
+        }
+        .taskbar-center { display: flex; gap: 6px; align-items: center; height: 100%; }
+        .taskbar-btn {
+            width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;
+            border-radius: 4px; font-size: 22px; transition: all 0.1s ease; position: relative;
+        }
+        .taskbar-btn.hovered { background: rgba(255, 255, 255, 0.08); }
+        .taskbar-btn.active::after { content: ''; position: absolute; bottom: 1px; left: 25%; width: 50%; height: 3px; background: #0078d4; border-radius: 2px; }
+        .win-start-logo { background: linear-gradient(225deg, #00adef, #0076a3); width: 20px; height: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 2px; padding: 2px; border-radius: 2px; }
+        .win-start-logo div { background: #ffffff; }
+        #taskbar-tray { position: absolute; right: 12px; display: flex; align-items: center; gap: 14px; color: #ffffff; font-size: 11.5px; padding: 0 8px; }
+
+        /* WINDOWS 11 START MENU WIDGET */
+        #start-menu {
+            position: absolute; bottom: -560px; left: 50%; transform: translateX(-50%);
+            width: 480px; height: 520px; background: rgba(19, 24, 38, 0.94); backdrop-filter: blur(35px);
+            border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 30px; z-index: 99998;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5); transition: bottom 0.3s cubic-bezier(0.1, 0.9, 0.25, 1);
+        }
+        #start-menu.open { bottom: 60px; }
+        .start-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-top: 20px; }
+        .start-item { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 6px; padding: 10px; border-radius: 8px; }
+        .start-item.hovered { background: rgba(255,255,255,0.06); }
+        .start-item div { font-size: 28px; }
+        .start-item span { color: #fff; font-size: 11.5px; }
+
+        /* SIDE SETTINGS CONTROL PANEL */
+        #right-settings-panel {
+            position: absolute; right: -350px; bottom: 60px; width: 330px;
+            background: rgba(17, 21, 33, 0.96); backdrop-filter: blur(30px);
+            border: 1px solid rgba(255, 215, 0, 0.15); border-radius: 16px; padding: 24px; color: #fff; z-index: 99998;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.6); transition: transform 0.3s cubic-bezier(0.1, 0.9, 0.25, 1);
+        }
+        #right-settings-panel.open { transform: translate3d(-365px, 0, 0); }
+        .panel-header { color: #ffd700; font-size: 16px; font-weight: 700; border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding-bottom: 10px; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+        .stat-row { margin-bottom: 12px; font-size: 13px; display: flex; justify-content: space-between; align-items: center; background: rgba(255, 255, 255, 0.02); padding: 10px 14px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.04); }
+        .stat-val { color: #4af7a0; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <!-- BOOT LOAD SPLASH SCREEN -->
+    <div id="boot-screen">
+        <div style="font-size: 32px; font-weight: bold; letter-spacing: 1px;">MİHVERSX OS</div>
+        <div style="color: #888; font-size: 13px; margin-top: 5px;">Premium Real Windows Simulation Kernel Loaded</div>
+        <div class="spinner"></div>
+    </div>
+
+    <!-- BACKGROUND GRAPHIC -->
+    <div id="bg-bloom"></div>
+
+    <!-- MOUSE CURSOR -->
+    <div id="windows-cursor"></div>
+
+    <!-- SAĞ TIK CONTEXT MENU -->
+    <div id="context-menu">
+        <div class="context-item" data-action="refresh">🔄 Yenile</div>
+        <div class="context-item" data-action="change-bg">🖼️ Sonraki Duvar Kağıdı</div>
+        <div class="context-item" data-action="close-all">❌ Tüm Pencereleri Kapat</div>
+    </div>
+
+    <!-- TOP CONTROL METRICS WIDGET -->
+    <div id="top-dashboard">
+        <div>
+            <div id="dash-clock">00:00</div>
+            <div id="dash-date">YÜKLENİYOR...</div>
+        </div>
+        <div class="dash-status">KERNEL: HUA-MATE-11 // STABLE ENGINE LOCKED</div>
+    </div>
+
+    <!-- MAIN DESKTOP STORAGE GRID -->
+    <div id="desktop">
+        <div class="desktop-icon" data-action="open" data-target="win-pc">
+            <div class="icon-img">💻</div>
+            <span>Bu Bilgisayar</span>
+        </div>
+        <div class="desktop-icon" data-action="open" data-target="win-google">
+            <div class="icon-img">🌐</div>
+            <span>Dahili Google Browser</span>
+        </div>
+        <div class="desktop-icon" data-action="open" data-target="win-standoff">
+            <div class="icon-img">🔫</div>
+            <span>Standoff 2</span>
+        </div>
+        <div class="desktop-icon" data-action="open" data-target="win-superkickoff">
+            <div class="icon-img">⚽</div>
+            <span>Super Kickoff</span>
+        </div>
+        <div class="desktop-icon" data-action="open" data-target="win-pastwithin">
+            <div class="icon-img">⏳</div>
+            <span>The Past Within</span>
+        </div>
+        <div class="desktop-icon" data-action="open" data-target="win-termux">
+            <div class="icon-img">🐚</div>
+            <span>Termux Terminal</span>
+        </div>
+        <div class="desktop-icon" data-action="open" data-target="win-studio">
+            <div class="icon-img">📊</div>
+            <span>MİHVERSX Studio</span>
+        </div>
+    </div>
+
+    <!-- APPLICATION: GOOGLE BROWSER -->
+    <div id="win-google" class="window" style="top: 8%; left: 12%;">
+        <div class="window-header">
+            <div class="window-title">🌐 Dahili Google Browser - MİHVERSX Kernel V12</div>
+            <div class="window-controls">
+                <button class="control-btn" data-action="minimize" data-target="win-google">─</button>
+                <button class="control-btn" data-action="maximize" data-target="win-google">🗖</button>
+                <button class="control-btn btn-close" data-action="close" data-target="win-google">✕</button>
+            </div>
+        </div>
+        <div class="window-content">
+            <div class="browser-top-bar">
+                <div class="browser-dots"><div class="browser-dot"></div></div>
+                <div class="browser-address-bar">🔒 https://www.google.com</div>
+            </div>
+            <div class="google-central-container">
+                <div class="google-logo">
+                    <span>G</span><span>o</span><span>o</span><span>g</span><span>l</span><span>e</span>
+                </div>
+                <div class="google-search-box">
+                    <span>🔍</span>
+                    <input type="text" id="google-input" placeholder="MİHVERSX YouTube ve HTML5 Geliştirme Projeleri" autocomplete="off">
+                </div>
+                <div class="search-results-dropdown" id="search-results">
+                    <div class="result-item" data-url="https://www.youtube.com/@MIHVERSX"><span class="highlight">1. MİHVERSX Official:</span> 3D Mobil Kodlama ve Oyun Dünyası</div>
+                    <div class="result-item" data-url="https://github.com"><span class="highlight">2. Standoff 2 Mobile Engine:</span> Raycasting Tabanlı Nişangah Düzenleyici</div>
+                    <div class="result-item" data-url="https://godotengine.org"><span class="highlight">3. Godot 4 Android Server:</span> Termux Üzerinden Proje Yayını</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- APPLICATION: BU BİLGİSAYAR -->
+    <div id="win-pc" class="window" style="top: 14%; left: 18%; width: 660px; height: 460px;">
+        <div class="window-header">
+            <div class="window-title">💻 Bu Bilgisayar - Sistem Donanım Paneli</div>
+            <div class="window-controls">
+                <button class="control-btn" data-action="minimize" data-target="win-pc">─</button>
+                <button class="control-btn" data-action="maximize" data-target="win-pc">🗖</button>
+                <button class="control-btn btn-close" data-action="close" data-target="win-pc">✕</button>
+            </div>
+        </div>
+        <div class="window-content">
+            <div class="pc-layout">
+                <div class="pc-sidebar">
+                    <div class="sidebar-item active">🖥️ Bu Sistem</div>
+                    <div class="sidebar-item">💾 Depolama</div>
+                    <div class="sidebar-item">🔌 Sürücüler</div>
+                </div>
+                <div class="pc-main">
+                    <div class="spec-card">
+                        <div class="spec-title">📱 Donanım Özellikleri Tanımı</div>
+                        <div class="spec-text">
+                            <strong>Ürün Grubu:</strong> Huawei MatePad SE 11 (MİHVERSX Custom Build)<br>
+                            <strong>Merkezi İşlemci:</strong> Snapdragon™ Octa-Core High-Performance Modu<br>
+                            <strong>İşletim Sistemi Mimari:</strong> HarmonyOS Tabanlı Windows Simulation Subsystem
+                        </div>
+                    </div>
+                    <div class="spec-card">
+                        <div class="spec-title">⚡ Grafik ve Yenileme Motoru</div>
+                        <div class="spec-text">
+                            <strong>Panel Matrisi:</strong> 11-inch IPS FullCare Display<br>
+                            <strong>Maksimum Ekran Hızı:</strong> 120Hz Akıcı Grafik Kilidi Aktif<br>
+                            <strong>Hedeflenen Grafik Akışı:</strong> 60 - 120 FPS Kararlı Senkronizasyon Modu
+                        </div>
+                    </div>
+                    <div class="spec-card">
+                        <div class="spec-title">💽 NVMe Flash Depolama Alanı</div>
+                        <div class="spec-text"><strong>Cüzi Miktar Boş Alan:</strong> 412 GB / 512 GB Bölümlendirilmiş Sürücü</div>
+                        <div class="progress-bar-container"><div class="progress-bar-fill"></div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- APPLICATION: STANDOFF 2 INTERACTIVE MOD -->
+    <div id="win-standoff" class="window" style="top: 10%; left: 22%; width: 560px; height: 440px;">
+        <div class="window-header">
+            <div class="window-title">🔫 Standoff 2 - Gelişmiş Hassasiyet Kontrol Ünitesi</div>
+            <div class="window-controls">
+                <button class="control-btn btn-close" data-action="close" data-target="win-standoff">✕</button>
+            </div>
+        </div>
+        <div class="window-content game-wrapper">
+            <div class="game-header-banner" style="background: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.7)), url('https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=600') center/cover;">
+                <h2 style="color: #ffb900;">STANDOFF 2 PROFILE</h2>
+            </div>
+            <div class="so2-crosshair-box">
+                <div id="target-crosshair" class="so2-crosshair"></div>
+                <div style="position:absolute; bottom:8px; right:12px; font-size:11px; color:#4af7a0;">Nişangah Önizleme: AKTİF</div>
+            </div>
+            <div class="game-control-row">
+                <span>Jiropskopsuz (Non-Gyro) Stabilizasyon:</span>
+                <span style="color: #4af7a0; font-weight:bold;">%100 KALİBRE EDİLDİ</span>
+            </div>
+            <div class="game-control-row">
+                <span>Nişangah Rengi Seçimi:</span>
+                <select id="crosshair-color" style="background:#111420; color:#fff; border:1px solid rgba(255,255,255,0.2); padding:4px; border-radius:4px;">
+                    <option value="#00ff00">Yeşil Lazer</option>
+                    <option value="#ff0000">Kırmızı Nokta</option>
+                    <option value="#00ffff">Mavi Holo</option>
+                </select>
+            </div>
+            <button class="control-btn" style="width:100%; height:40px; background:#4af7a0; color:#000; font-weight:bold; border-radius:6px; margin-top:5px;">HASSASİYET KODUNU AKTİF ET</button>
+        </div>
+    </div>
+
+    <!-- APPLICATION: SUPER KICKOFF TACTICS -->
+    <div id="win-superkickoff" class="window" style="top: 15%; left: 25%; width: 580px; height: 450px;">
+        <div class="window-header">
+            <div class="window-title">⚽ Super Kickoff - Taktik Simülasyon Motoru</div>
+            <div class="window-controls">
+                <button class="control-btn btn-close" data-action="close" data-target="win-superkickoff">✕</button>
+            </div>
+        </div>
+        <div class="window-content game-wrapper" style="background: #0d1611;">
+            <div class="spec-card" style="background:rgba(0,0,0,0.3);">
+                <div style="display:flex; justify-content:between; align-items:center; width:100%;">
+                    <div><strong>MİHVERSX FC Kulübü</strong><br><span style="font-size:11px; color:#aaa;">Lig Durumu: Şampiyonlar Ligi Grubu</span></div>
+                    <div style="text-align:right; color:#ffd700; font-weight:bold; flex:1;">Bütçe: €245,000,000</div>
+                </div>
+            </div>
+            <div class="sk-pitch">
+                <div class="sk-player-node">ST</div>
+                <div class="sk-player-node">MC</div>
+                <div class="sk-player-node">DC</div>
+                <div class="sk-player-node">GK</div>
+            </div>
+            <div class="game-control-row" style="background:rgba(0,0,0,0.2);">
+                <span>Takım Diziliş Formasyonu:</span>
+                <span style="font-weight:bold; color:#ffd700;">4-3-3 Atak Modu</span>
+            </div>
+            <button class="control-btn" id="sk-match-btn" style="width:100%; height:42px; background:#ffd700; color:#000; font-weight:bold; border-radius:6px;">HAFTALIK MAÇI SİMÜLE ET</button>
+        </div>
+    </div>
+
+    <!-- APPLICATION: THE PAST WITHIN PUZZLE ROOM -->
+    <div id="win-pastwithin" class="window" style="top: 18%; left: 28%; width: 600px; height: 430px;">
+        <div class="window-header">
+            <div class="window-title">⏳ The Past Within - Asimetrik İletişim Odası</div>
+            <div class="window-controls">
+                <button class="control-btn btn-close" data-action="close" data-target="win-pastwithin">✕</button>
+            </div>
+        </div>
+        <div class="window-content game-wrapper" style="background:#1c1718;">
+            <div style="font-size:13px; color:#aaa; text-align:center;">Bu oyun iki oyuncunun (Geçmiş ve Gelecek) birbiriyle konuşarak şifre çözmesini gerektirir.</div>
+            <div class="tpw-split">
+                <div class="tpw-room">
+                    <div style="color:#ff5f56; font-weight:bold; font-size:13px;">👁️ GEÇMİŞ (The Past)</div>
+                    <div style="font-size:12px; color:#bbb;">Kutuda bir saat var. Saatin akrebi ve yelkovanı garip bir sembolü gösteriyor. Şifre ne?</div>
+                    <input type="text" id="tpw-past-input" class="tpw-input-box" placeholder="KODU YAZ">
+                    <button class="tpw-btn" onclick="checkTpwCode('past')">GELECEĞE GÖNDER</button>
+                </div>
+                <div class="tpw-room" style="border-color:rgba(0,135,255,0.3);">
+                    <div style="color:#0087ff; font-weight:bold; font-size:13px;">👁️ GELECEK (The Future)</div>
+                    <div style="font-size:12px; color:#bbb;">Laboratuvar terminali aktif. Geçmişten gelen sembol dizisini buraya girmelisin.</div>
+                    <input type="text" id="tpw-future-input" class="tpw-input-box" placeholder="KODU YAZ" style="border-color:rgba(0,135,255,0.2);">
+                    <button class="tpw-btn" style="background:#0087ff;" onclick="checkTpwCode('future')">GEÇMİŞE DOĞRULA</button>
+                </div>
+            </div>
+            <div id="tpw-status-callback" style="text-align:center; font-size:13px; font-weight:bold; margin-top:10px; color:#ffb900;"></div>
+        </div>
+    </div>
+
+    <!-- NEW APPLICATION: INTERACTIVE TERMUX SHELL -->
+    <div id="win-termux" class="window" style="top: 22%; left: 15%; width: 620px; height: 400px;">
+        <div class="window-header" style="background:#1a1a1a;">
+            <div class="window-title" style="color:#02bf02; font-family:monospace;">🐚 Termux Environment v0.118</div>
+            <div class="window-controls">
+                <button class="control-btn btn-close" data-action="close" data-target="win-termux" style="color:#02bf02;">✕</button>
+            </div>
+        </div>
+        <div class="window-content termux-wrapper">
+            <div class="termux-history" id="termux-history-box">
+                <div>Welcome to Termux Android Native Shell!</div>
+                <div>Type 'help' to see available modular commands.</div>
+                <div>&nbsp;</div>
+            </div>
+            <div class="termux-input-line">
+                <span class="termux-prompt">MİHVERSX@SE11:~$</span>
+                <input type="text" id="termux-input" class="termux-cmd-input" autocomplete="off" autofocus>
+            </div>
+        </div>
+    </div>
+
+    <!-- NEW APPLICATION: YOUTUBE STUDIO CONTROL DASHBOARD -->
+    <div id="win-studio" class="window" style="top: 12%; left: 30%; width: 580px; height: 420px;">
+        <div class="window-header" style="background:#282828;">
+            <div class="window-title">📊 MİHVERSX Content Creator Dashboard</div>
+            <div class="window-controls">
+                <button class="control-btn btn-close" data-action="close" data-target="win-studio">✕</button>
+            </div>
+        </div>
+        <div class="window-content" style="background:#1f1f1f;">
+            <div class="studio-grid">
+                <div class="studio-card">
+                    <div style="font-size:12px; color:#aaa;">Toplam Kanal Abonesi</div>
+                    <div class="studio-metric" id="studio-subs">12,450</div>
+                    <div style="font-size:11px; color:#4af7a0; margin-top:4px;">📈 Son 28 günde +1,240</div>
+                </div>
+                <div class="studio-card">
+                    <div style="font-size:12px; color:#aaa;">Video İzlenme Oranı</div>
+                    <div class="studio-metric" style="color:#0087ff; text-shadow:0 0 10px rgba(0,135,255,0.2);">342,800</div>
+                    <div style="font-size:11px; color:#0087ff; margin-top:4px;">⏱️ İzlenme saati artıyor</div>
+                </div>
+            </div>
+            <div style="padding:0 20px 20px 20px;">
+                <div class="spec-card" style="background:#282828;">
+                    <div style="font-size:13px; font-weight:bold; margin-bottom:8px; color:#ffd700;">🎬 Son Yüklenen Video İstatistiği</div>
+                    <div style="font-size:12px; color:#ddd;">"The Past Within Tablet İncelemesi ve Gizli Odalar"</div>
+                    <div style="display:flex; justify-content:space-between; margin-top:10px; font-size:11px; color:#aaa;">
+                        <span>Beğeni: %99.2</span>
+                        <span>Yorumlar: 142</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- WINDOWS START MENU WIDGET -->
+    <div id="start-menu">
+        <div style="font-size:14px; font-weight:bold; color:#fff; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:8px;">Sabitlenmiş Uygulamalar</div>
+        <div class="start-grid">
+            <div class="start-item" data-action="open" data-target="win-pc"><div>💻</div><span>Sistem</span></div>
+            <div class="start-item" data-action="open" data-target="win-google"><div>🌐</div><span>Google</span></div>
+            <div class="start-item" data-action="open" data-target="win-standoff"><div>🔫</div><span>Standoff 2</span></div>
+            <div class="start-item" data-action="open" data-target="win-superkickoff"><div>⚽</div><span>Kickoff</span></div>
+            <div class="start-item" data-action="open" data-target="win-pastwithin"><div>⏳</div><span>Past Within</span></div>
+            <div class="start-item" data-action="open" data-target="win-termux"><div>🐚</div><span>Termux</span></div>
+            <div class="start-item" data-action="open" data-target="win-studio"><div>📊</div><span>Studio</span></div>
+        </div>
+        <div style="margin-top:35px; border-top:1px solid rgba(255,255,255,0.1); padding-top:15px; display:flex; align-items:center; gap:12px;">
+            <div style="width:32px; height:32px; background:#ffd700; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#000; font-weight:bold; font-size:12px;">M</div>
+            <div>
+                <div style="font-size:12.5px; color:#fff; font-weight:600;">MİHVERSX Admin</div>
+                <div style="font-size:11px; color:#aaa;">Huawei MatePad SE 11 Owner</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PREMIUM SIDE CONTROL PANEL -->
+    <div id="right-settings-panel">
+        <div class="panel-header">👑 MİHVERSX Master Control Engine</div>
+        <div class="stat-row"><span>Sistem Çalışma Modu:</span><span class="stat-val" style="color:#ffd700;">PREMIUM MATRIX</span></div>
+        <div class="stat-row"><span>Donanım Yenileme Frekansı:</span><span class="stat-val">120 Hz ARTIŞ</span></div>
+        <div class="stat-row"><span>İmleç Sapma Koruması:</span><span class="stat-val" style="color:#34a853;">DONANIMSAL AKTİF</span></div>
+        <div class="stat-row"><span>Simüle Edilen FPS:</span><span class="stat-val" id="panel-fps-counter">120 FPS</span></div>
+        <div class="stat-row"><span>İletişim Gecikmesi:</span><span class="stat-val" style="color:#0087ff;">0.05 ms</span></div>
+        <div style="margin-top:15px; font-size:11px; color:#666; text-align:center;">MİHVERSX OS Kernel v12.0.4 Premium System</div>
+    </div>
+
+    <!-- SYSTEM GÖREV ÇUBUĞU (TASKBAR) -->
+    <div id="taskbar">
+        <div class="taskbar-center">
+            <div class="taskbar-btn" id="start-trigger"><div class="win-start-logo"><div></div><div></div><div></div><div></div></div></div>
+            <div class="taskbar-btn" data-action="open" data-target="win-google">🌐</div>
+            <div class="taskbar-btn" data-action="open" data-target="win-pc">💻</div>
+            <div class="taskbar-btn" data-action="open" data-target="win-standoff">🔫</div>
+            <div class="taskbar-btn" data-action="open" data-target="win-superkickoff">⚽</div>
+            <div class="taskbar-btn" data-action="open" data-target="win-pastwithin">⏳</div>
+            <div class="taskbar-btn" data-action="open" data-target="win-termux">🐚</div>
+            <div class="taskbar-btn" data-action="open" data-target="win-studio">📊</div>
+        </div>
+        <div id="taskbar-tray" id="settings-trigger">
+            <span>🔊</span>
+            <span style="color:#4af7a0; font-weight:bold;">⚡ 120Hz</span>
+            <span id="tray-time" style="font-weight:500;">00:00</span>
+        </div>
+    </div>
+
+    <!-- CORE SYSTEM SCRIPTS ENGINE -->
+    <script>
+        // SYSTEM TIMEOUT FOR BOOT
+        setTimeout(() => {
+            const boot = document.getElementById('boot-screen');
+            boot.style.opacity = '0';
+            setTimeout(() => boot.style.display = 'none', 300);
+        }, 1500);
+
+        // SYSTEM COORDINATES & DRIVER LOCKS
+        let mouseX = window.innerWidth / 2;
+        let mouseY = window.innerHeight / 2;
+        const cursorSpeed = 2.4;
+        const cursorEl = document.getElementById('windows-cursor');
+
+        function updateCursor() {
+            mouseX = Math.max(0, Math.min(window.innerWidth - 6, mouseX));
+            mouseY = Math.max(0, Math.min(window.innerHeight - 6, mouseY));
+            
+            // Hardware level absolute coordinate binding
+            cursorEl.style.transform = `translate3d(${mouseX}px, ${mouseY}px, 0)`;
+
+            let el = document.elementFromPoint(mouseX, mouseY);
+            if (el) {
+                if (el.closest('.desktop-icon') || el.closest('button') || el.closest('.taskbar-btn') || el.closest('.result-item') || el.closest('.context-item') || el.id === 'google-input' || el.closest('.start-item') || el.closest('select')) {
+                    cursorEl.className = 'pointer';
+                } else if (el.id === 'termux-input' || el.classList.contains('tpw-input-box')) {
+                    cursorEl.className = 'text';
+                } else if (el.closest('.window-header')) {
+                    cursorEl.className = 'move';
+                } else {
+                    cursorEl.className = '';
+                }
+            }
+            
+            // Hover states grid engine
+            document.querySelectorAll('.desktop-icon, .taskbar-btn, .result-item, .context-item, .start-item, .sidebar-item').forEach(i => i.classList.remove('hovered'));
+            if (el) {
+                let h = el.closest('.desktop-icon') || el.closest('.taskbar-btn') || el.closest('.result-item') || el.closest('.context-item') || el.closest('.start-item') || el.closest('.sidebar-item');
+                if (h) h.classList.add('hovered');
+            }
+        }
+
+        // ABSOLUTE TABLET TOUCHPAD TRANSLATION LAYER
+        let lastTouchX = 0, lastTouchY = 0;
+        let isTouching = false, hasMoved = false, tapTimeout;
+
+        document.addEventListener('touchstart', (e) => {
+            isTouching = true;
+            hasMoved = false;
+            if (e.touches.length === 1) {
+                lastTouchX = e.touches[0].clientX;
+                lastTouchY = e.touches[0].clientY;
+                
+                tapTimeout = setTimeout(() => {
+                    if (!hasMoved) simulateWindowsClick();
+                }, 120);
+            }
+        }, {passive: true});
+
+        document.addEventListener('touchmove', (e) => {
+            if (!isTouching) return;
+            e.preventDefault();
+
+            let deltaX = e.touches[0].clientX - lastTouchX;
+            let deltaY = e.touches[0].clientY - lastTouchY;
+
+            if (Math.abs(deltaX) > 1.2 || Math.abs(deltaY) > 1.2) {
+                hasMoved = true;
+                clearTimeout(tapTimeout);
+            }
+
+            mouseX += deltaX * cursorSpeed;
+            mouseY += deltaY * cursorSpeed;
+
+            lastTouchX = e.touches[0].clientX;
+            lastTouchY = e.touches[0].clientY;
+
+            requestAnimationFrame(updateCursor);
+        }, {passive: false});
+
+        document.addEventListener('touchend', () => isTouching = false);
+
+        // REVOLUTIONARY CLICK EMULATION AND CAPTURE ENGINE
+        function simulateWindowsClick() {
+            let el = document.elementFromPoint(mouseX, mouseY);
+            if (!el) return;
+
+            // Context menu interceptor
+            if (el.closest('.context-item')) {
+                let action = el.closest('.context-item').getAttribute('data-action');
+                executeContextAction(action);
+                document.getElementById('context-menu').style.display = 'none';
+                return;
+            } else {
+                document.getElementById('context-menu').style.display = 'none';
+            }
+
+            if (el.id === 'google-input') {
+                el.focus();
+                document.getElementById('search-results').style.display = 'block';
+                return;
+            }
+            if (el.id === 'termux-input') {
+                el.focus();
+                return;
+            }
+
+            let rItem = el.closest('.result-item');
+            if (rItem) {
+                let url = rItem.getAttribute('data-url');
+                if(url) window.open(url, '_blank');
+                return;
+            }
+
+            let clickable = el.closest('.desktop-icon') || el.closest('button') || el.closest('.taskbar-btn') || el.closest('.start-item');
+            if (clickable) {
+                let action = clickable.getAttribute('data-action');
+                let target = clickable.getAttribute('data-target');
+
+                if (action === 'open') {
+                    let win = document.getElementById(target);
+                    if (win) {
+                        win.style.display = 'flex';
+                        setTimeout(() => win.classList.add('open'), 10);
+                        bringToFront(win);
+                        updateTaskbarActiveState(target, true);
+                    }
+                    document.getElementById('start-menu').classList.remove('open');
+                } else if (action === 'close') {
+                    let win = document.getElementById(target);
+                    if (win) {
+                        win.classList.remove('open');
+                        setTimeout(() => win.style.display = 'none', 150);
+                        updateTaskbarActiveState(target, false);
+                    }
+                } else if (action === 'maximize') {
+                    let win = document.getElementById(target);
+                    if(win) win.classList.toggle('maximized');
+                } else if (action === 'minimize') {
+                    let win = document.getElementById(target);
+                    if(win) {
+                        win.classList.remove('open');
+                        setTimeout(() => win.style.display = 'none', 150);
+                    }
+                }
+                
+                // Specific direct triggers
+                if (clickable.id === 'start-trigger') {
+                    document.getElementById('start-menu').classList.toggle('open');
+                }
+                if (clickable.id === 'taskbar-tray') {
+                    document.getElementById('right-settings-panel').classList.toggle('open');
+                }
+                if (clickable.id === 'sk-match-btn') {
+                    simulateSuperKickoffMatch();
+                }
+
+                clickable.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+            } else {
+                document.getElementById('search-results').style.display = 'none';
+                document.getElementById('start-menu').classList.remove('open');
+                document.getElementById('right-settings-panel').classList.remove('open');
+            }
+        }
+
+        // WINDOWS TASKBAR STATE SYNC
+        function updateTaskbarActiveState(target, isActive) {
+            const btn = document.querySelector(`.taskbar-btn[data-target="${target}"]`);
+            if(btn) {
+                if(isActive) btn.classList.add('active');
+                else btn.classList.remove('active');
+            }
+        }
+
+        // RIGHT CLICK CONTEXT SYSTEM EMULATION
+        let touchTimer;
+        document.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 1) {
+                touchTimer = setTimeout(() => {
+                    let el = document.elementFromPoint(mouseX, mouseY);
+                    if (el && (el.id === 'desktop' || el.id === 'bg-bloom')) {
+                        const menu = document.getElementById('context-menu');
+                        menu.style.top = `${mouseY}px`;
+                        menu.style.left = `${mouseX}px`;
+                        menu.style.display = 'block';
+                    }
+                }, 800); // Long press duration for right click
+            }
+        }, {passive:true});
+        document.addEventListener('touchmove', () => clearTimeout(touchTimer));
+        document.addEventListener('touchend', () => clearTimeout(touchTimer));
+
+        const bgWallpapers = [
+            'https://images.unsplash.com/photo-1620121692029-d088224ddc74?q=80&w=1920',
+            'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1920',
+            'https://images.unsplash.com/photo-1634017839464-5c339ebe3cb4?q=80&w=1920'
+        ];
+        let currentBgIdx = 0;
+
+        function executeContextAction(action) {
+            if (action === 'refresh') {
+                const status = document.querySelector('.dash-status');
+                status.innerText = "YENİLENİYOR...";
+                status.style.color = "#ffd700";
+                setTimeout(() => {
+                    status.innerText = "KERNEL: HUA-MATE-11 // STABLE ENGINE LOCKED";
+                    status.style.color = "#4af7a0";
+                }, 600);
+            } else if (action === 'change-bg') {
+                currentBgIdx = (currentBgIdx + 1) % bgWallpapers.length;
+                document.getElementById('bg-bloom').style.backgroundImage = `url('${bgWallpapers[currentBgIdx]}')`;
+            } else if (action === 'close-all') {
+                document.querySelectorAll('.window').forEach(w => {
+                    w.classList.remove('open');
+                    setTimeout(() => w.style.display = 'none', 150);
+                });
+                document.querySelectorAll('.taskbar-btn').forEach(b => b.classList.remove('active'));
+            }
+        }
+
+        // NO-CORRUPTION DRAG WINDOWS ADVANCED MOTOR
+        let highestZ = 10000;
+        function bringToFront(win) {
+            highestZ++;
+            win.style.zIndex = highestZ;
+        }
+
+        document.querySelectorAll('.window').forEach(win => {
+            const header = win.querySelector('.window-header');
+            let drag = { isDragging: false, startX: 0, startY: 0, offsetX: 0, offsetY: 0 };
+
+            document.addEventListener('touchstart', (e) => {
+                let targetEl = document.elementFromPoint(mouseX, mouseY);
+                if (targetEl && (targetEl === header || header.contains(targetEl)) && !targetEl.classList.contains('control-btn')) {
+                    drag.isDragging = true;
+                    win.classList.add('dragging');
+                    bringToFront(win);
+                    drag.startX = mouseX - drag.offsetX;
+                    drag.startY = mouseY - drag.offsetY;
+                    clearTimeout(tapTimeout);
+                }
+            }, {passive: true});
+
+            document.addEventListener('touchmove', (e) => {
+                if (drag.isDragging && isTouching && !win.classList.contains('maximized')) {
+                    drag.offsetX = mouseX - drag.startX;
+                    drag.offsetY = mouseY - drag.startY;
+                    win.style.transform = `translate3d(${drag.offsetX}px, ${drag.offsetY}px, 0)`;
+                }
+            }, {passive: false});
+
+            document.addEventListener('touchend', () => {
+                drag.isDragging = false;
+                win.classList.remove('dragging');
+            });
+        });
+
+        // GOOGLE REALTIME LISTENER INPUT
+        const googleInput = document.getElementById('google-input');
+        googleInput.addEventListener('input', (e) => {
+            let val = e.target.value.toLowerCase();
+            let dropdown = document.getElementById('search-results');
+            dropdown.style.display = val.length > 0 ? 'block' : 'none';
+        });
+
+        // INTERACTIVE STANDOFF MOD LOGIC
+        const crosshairSelect = document.getElementById('crosshair-color');
+        crosshairSelect.addEventListener('change', (e) => {
+            const targetCh = document.getElementById('target-crosshair');
+            targetCh.style.setProperty('--ch-color', e.target.value);
+            // Dynamic modification of crosshair color style rule override
+            document.styleSheets[0].insertRule(`.so2-crosshair::before, .so2-crosshair::after { background: ${e.target.value} !important; }`, document.styleSheets[0].cssRules.length);
+        });
+
+        // SUPER KICKOFF MATCH GENERATOR SIMULATION
+        function simulateSuperKickoffMatch() {
+            const btn = document.getElementById('sk-match-btn');
+            btn.innerText = "MAÇ OYNANIYOR...";
+            btn.style.background = "#4af7a0";
+            setTimeout(() => {
+                let score1 = Math.floor(Math.random() * 4);
+                let score2 = Math.floor(Math.random() * 2);
+                alert(`Maç Sonucu: MİHVERSX FC ${score1} - 0 Rakip Takım! Tebrikler Menajer!`);
+                btn.innerText = "HAFTALIK MAÇI SİMÜLE ET";
+                btn.style.background = "#ffd700";
+            }, 1200);
+        }
+
+        // THE PAST WITHIN ENCRYPTED DECISION ROOMS CHECKER
+        function checkTpwCode(type) {
+            const pastVal = document.getElementById('tpw-past-input').value.toUpperCase();
+            const futVal = document.getElementById('tpw-future-input').value.toUpperCase();
+            const callback = document.getElementById('tpw-status-callback');
+
+            if(type === 'past' && pastVal === 'CUBE') {
+                callback.innerText = "✓ Geçmiş Odası Şifresi Doğru! Gelecek Terminaline 'MATRIX' komutu düştü.";
+                document.getElementById('tpw-future-input').value = 'MATRIX';
+            } else if(type === 'future' && futVal === 'MATRIX') {
+                callback.innerText = "👑 TEBRİKLER! İki Oda Arasındaki Asimetrik Şifre Çözüldü. Kanal İçeriği Başarılı!";
+                callback.style.color = "#4af7a0";
+            } else {
+                callback.innerText = "❌ Yanlış Şifre Dizilimi! Odaların Birbiriyle Konuşması Lazım.";
+                callback.style.color = "#ff5f56";
+            }
+        }
+
+        // TERMUX VIRTUAL LINUX SHELL COMMAND CORE
+        const termuxInput = document.getElementById('termux-input');
+        const historyBox = document.getElementById('termux-history-box');
+
+        termuxInput.addEventListener('keydown', (e) => {
+            if(e.key === 'Enter') {
+                let cmd = termuxInput.value.trim();
+                if(cmd.length === 0) return;
+
+                let userLine = document.createElement('div');
+                userLine.innerHTML = `<span class="termux-prompt">MİHVERSX@SE11:~$</span> <span style="color:#fff;">${cmd}</span>`;
+                historyBox.appendChild(userLine);
+
+                let responseLine = document.createElement('div');
+                let cleanCmd = cmd.toLowerCase();
+
+                if(cleanCmd === 'help') {
+                    responseLine.innerHTML = "Available commands:<br> - <b>ls</b>: List local project files<br> - <b>node server.js</b>: Run dynamic HTML5 game host server<br> - <b>neofetch</b>: Display Huawei MatePad SE 11 OS architecture details<br> - <b>clear</b>: Flush screen buffer";
+                } else if(cleanCmd === 'ls') {
+                    responseLine.innerHTML = "<span style='color:#0087ff;'>index.html</span> &nbsp; <span style='color:#0087ff;'>server.js</span> &nbsp; <span style='color:#0087ff;'>three.min.js</span> &nbsp; <span style='color:#aaa;'>assets/</span>";
+                } else if(cleanCmd === 'node server.js') {
+                    responseLine.innerHTML = "<span style='color:#ffd700;'>[MİHVERSX-Engine] Localhost server running at HTTP://127.0.0.1:8080/ for HTML5 simulation...</span>";
+                } else if(cleanCmd === 'neofetch') {
+                    responseLine.innerHTML = "<span style='color:#ffd700;'>OS:</span> MİHVERSX OS Premium Core v12<br><span style='color:#ffd700;'>Host:</span> Huawei MatePad SE 11 Device<br><span style='color:#ffd700;'>Kernel:</span> HarmonyOS Linux Integration Subsystem<br><span style='color:#ffd700;'>Display:</span> 120Hz Smooth Gaming Screen Panel<br><span style='color:#ffd700;'>Shell:</span> bash v5.2 custom console";
+                } else if(cleanCmd === 'clear') {
+                    historyBox.innerHTML = '';
+                    termuxInput.value = '';
+                    return;
+                } else {
+                    responseLine.innerText = `bash: command not found: ${cmd}. Type 'help' for modules.`;
+                    responseLine.style.color = '#ff5f56';
+                }
+
+                historyBox.appendChild(responseLine);
+                termuxInput.value = '';
+                // Dynamic auto scroll inside virtual console terminal
+                document.getElementById('win-termux').querySelector('.termux-wrapper').scrollTop = historyBox.scrollHeight;
+            }
+        });
+
+        // SYSTEM JITTER GENERATOR FOR FPS SIMULATOR
+        setInterval(() => {
+            const counter = document.getElementById('panel-fps-counter');
+            if(counter) {
+                let jitter = 118 + Math.floor(Math.random() * 3);
+                counter.innerText = `${jitter} FPS`;
+            }
+        }, 800);
+
+        // CLOCK AND DATE ENGINE LAYER
+        function runSystemClock() {
+            const date = new Date();
+            const timeStr = date.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+            document.getElementById('dash-clock').innerText = timeStr;
+            document.getElementById('tray-time').innerText = timeStr;
+            document.getElementById('dash-date').innerText = date.toLocaleDateString('tr-TR', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+        }
+        setInterval(runSystemClock, 1000);
+        runSystemClock();
+
+        window.addEventListener('resize', updateCursor);
+        // Initial setup trigger
+        updateCursor();
+    </script>
+
+<!-- MİHVERSX OS V13 EXTRA PACK -->
+<script>
+document.addEventListener('DOMContentLoaded',()=>{
+    // Notification system
+    const note=document.createElement('div');
+    note.id='v13-note';
+    note.style.cssText='position:absolute;top:80px;right:20px;background:#111;color:#fff;padding:12px;border-radius:10px;z-index:999999;display:none';
+    document.body.appendChild(note);
+
+    window.showV13Notification=function(msg){
+        note.innerText=msg;
+        note.style.display='block';
+        setTimeout(()=>note.style.display='none',3000);
+    };
+
+    // Achievement system
+    let achievements=0;
+    window.unlockAchievement=function(name){
+        achievements++;
+        showV13Notification("🏆 Başarım Açıldı: "+name);
+    };
+
+    // Random desktop tips
+    setInterval(()=>{
+        const tips=[
+            "💡 Termux'ta help yazmayı dene",
+            "⚽ Maç simülasyonunu çalıştır",
+            "🔫 Nişangah rengini değiştir",
+            "🌐 Tarayıcıyı aç"
+        ];
+        showV13Notification(tips[Math.floor(Math.random()*tips.length)]);
+    },30000);
+
+    // New desktop icon
+    const desktop=document.getElementById('desktop');
+    const icon=document.createElement('div');
+    icon.className='desktop-icon';
+    icon.innerHTML='<div class="icon-img">📝</div><span>Not Defteri</span>';
+    icon.onclick=()=>{
+        const txt=prompt("Notunu yaz:");
+        if(txt){
+            localStorage.setItem("mihversx_note",txt);
+            unlockAchievement("İlk Not");
+        }
+    };
+    desktop.appendChild(icon);
+});
+</script>
+
+
+<script>
+document.addEventListener('DOMContentLoaded',()=>{
+
+// V14 MODULES
+const apps=[
+'📁 Dosya Yöneticisi','🧮 Hesap Makinesi','🎵 Müzik Çalar',
+'🤖 Yapay Zeka','📋 Görev Yöneticisi'
+];
+
+const desktop=document.getElementById('desktop');
+
+apps.forEach(name=>{
+ const d=document.createElement('div');
+ d.className='desktop-icon';
+ d.innerHTML=`<div class="icon-img">${name.split(' ')[0]}</div><span>${name.substring(2)}</span>`;
+ d.onclick=()=>alert(name+' modülü yüklendi.');
+ desktop.appendChild(d);
+});
+
+// Fake AI assistant
+window.mihversxAI=function(){
+ const q=prompt("MİHVERSX AI");
+ if(q) alert("AI Yanıtı: '"+q+"' komutu işlendi.");
+};
+
+// System monitor
+setInterval(()=>{
+ const fps=document.getElementById('panel-fps-counter');
+ if(fps){
+   const ram=Math.floor(Math.random()*8)+8;
+   fps.title='RAM: '+ram+' GB';
+ }
+},1000);
+
+});
+</script>
+
+
+<script>
+document.addEventListener('DOMContentLoaded',()=>{
+
+// ===== V15 ULTIMATE EXPANSION =====
+
+// Save / Load System
+window.saveSystemState=()=>{
+ localStorage.setItem('mihversx_state', JSON.stringify({
+   time:new Date().toISOString(),
+   version:'V15 Ultimate'
+ }));
+ alert('Sistem kaydedildi.');
+};
+
+window.loadSystemState=()=>{
+ const data=localStorage.getItem('mihversx_state');
+ alert(data ? 'Yüklendi: '+data : 'Kayıt bulunamadı.');
+};
+
+// Fake file system
+window.virtualFiles = JSON.parse(localStorage.getItem('virtualFiles')||'[]');
+
+window.createFile=()=>{
+ const name=prompt('Dosya adı:');
+ if(name){
+   virtualFiles.push(name);
+   localStorage.setItem('virtualFiles',JSON.stringify(virtualFiles));
+ }
+};
+
+window.deleteFile=()=>{
+ const name=prompt('Silinecek dosya:');
+ virtualFiles=virtualFiles.filter(x=>x!==name);
+ localStorage.setItem('virtualFiles',JSON.stringify(virtualFiles));
+};
+
+// Notification center
+const center=document.createElement('div');
+center.id='notification-center';
+center.style.cssText='position:absolute;right:10px;top:120px;width:260px;height:300px;background:#111;color:#fff;overflow:auto;z-index:999999;border-radius:10px;padding:10px';
+center.innerHTML='<h3>Bildirim Merkezi</h3>';
+document.body.appendChild(center);
+
+window.pushNotification=(msg)=>{
+ const p=document.createElement('div');
+ p.innerText=msg;
+ center.appendChild(p);
+};
+
+// Widgets
+const widget=document.createElement('div');
+widget.style.cssText='position:absolute;left:10px;top:100px;background:#222;color:white;padding:10px;border-radius:10px;z-index:9999';
+widget.innerHTML='CPU: 32%<br>RAM: 8GB';
+document.body.appendChild(widget);
+
+// User system
+if(!localStorage.getItem('mihversx_user')){
+ const u='Admin';
+ localStorage.setItem('mihversx_user',u);
+}
+
+// App Store
+window.openStore=()=>{
+ alert('MİHVERSX Store\nFPS Game\nCar Racing\nThemes\nWidgets');
+};
+
+// Multi desktop simulation
+window.desktopIndex=1;
+window.switchDesktop=()=>{
+ desktopIndex++;
+ if(desktopIndex>3) desktopIndex=1;
+ alert('Masaüstü '+desktopIndex);
+};
+
+// FPS demo launcher
+window.launchFPS=()=>{
+ alert('Mini FPS motoru başlatıldı (demo çekirdeği).');
+};
+
+// Racing launcher
+window.launchRacing=()=>{
+ alert('Araba yarışı motoru başlatıldı (demo çekirdeği).');
+};
+
+pushNotification('V15 Ultimate modülleri yüklendi.');
+
+});
+</script>
+
+</body>
+</html>
